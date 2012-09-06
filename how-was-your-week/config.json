@@ -1,0 +1,14 @@
+{
+    "name": "How Was Your Week",
+    "className": "CustomApp",
+    "sdk": "2.0p3",
+    "debugSDKAbsoluteURL": "https://audemo.rallydev.com/apps",
+    "debugWorkspaceOID": "",
+    "debugProjectOID": "",
+    "javascript": [
+        "App.js"
+    ],
+    "css": [
+        "app.css"
+    ]
+}
