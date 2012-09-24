@@ -12,6 +12,7 @@ Ext.define('CustomApp', {
         itemId: 'date_box',
         listeners: {
             change: function( field, newValue, oldValue ) {
+                console.log( "Date Change" );
                 this.ownerCt._loadValues();
             }
         }
@@ -54,7 +55,7 @@ Ext.define('CustomApp', {
     }],
 
     launch: function() {
-        console.log( this.getContext().getProject() );
+        console.log( "How Was Your Week launch" );
         this.wait = new Ext.LoadMask( Ext.getBody(), {msg: "Loading data..." } );
         //console.log( Rally.environment );
         //this.bus = Rally.environment.getMessageBus();
@@ -66,12 +67,14 @@ Ext.define('CustomApp', {
     },
     _loadValues: function() {
         this.wait.show();
+        console.log( "_loadValues()" );
         var date_string = Rally.util.DateTime.toIsoString(this.down("#date_box").getValue(), true).replace(/T[\W\w]*/,"");
         var key = this.key_prefix + date_string + "." + this.getContext().getUser().ObjectID;
         Ext.create( 'Rally.data.WsapiDataStore', {
             model: 'Preference',
             listeners: {
                 load: function( store, data, success ) {
+                    console.log( "load()" );
                     if ( data.length > 0 ) {
                         this.preference = data[0].data;
                         var value = Ext.JSON.decode( this.preference.Value );
@@ -96,6 +99,7 @@ Ext.define('CustomApp', {
         });
     },
     _saveValue: function() {
+        console.log( "_saveValue()" );
         var waiter = this.wait;
         waiter.show();
         var that = this;
@@ -110,30 +114,32 @@ Ext.define('CustomApp', {
         console.log( value );
         if ( this.preference ) {
             var objectID = this.preference.ObjectID;
-            
+            console.log("Updating preference", objectID);
             Rally.data.ModelFactory.getModel({
                 type: 'Preference',
                 success: function(model) {
                     model.load( objectID, {
                         fetch: [ 'ObjectID' ],
                         callback: function(result,operation) {
+                            console.log( "model.load()" );
                             if ( operation.wasSuccessful() ) {
                                 result.set( 'Value', Ext.JSON.encode(value) );
                                 result.save( {
-					                callback: function( result, operation ) {
-					                    if ( operation.wasSuccessful() ) {
-				                            that.record = result;
+                                    callback: function( result, operation ) {
+                                        if ( operation.wasSuccessful() ) {
+                                            console.log( "About to publish", that.preference );
                                             that.publish("com.rallydev.pxs.hwyw.", { text: "save" } );
-				                        } else {
-				                            alert( "Error saving:" + operation.error.errors[0] );
-				                            console.log( "error", operation );
-				                        }
+                                        } else {
+                                            console.log( "error", operation );
+                                            alert( "Error saving:" + operation.error.errors[0] );
+                                        }
                                         waiter.hide();
-					                }
-					            } );
+                                    }
+                                } );
                             } else {
-                                alert( "Error getting:" + operation.error.errors[0] );
+                     
                                 console.log( "error", operation );
+                                alert( "Error getting:" + operation.error.errors[0] );
                             }
                         }
                     });
@@ -149,14 +155,17 @@ Ext.define('CustomApp', {
                         Value: Ext.JSON.encode(value),
                         Project: this.getContext().getProject()
                     });
+                    console.log("Got model for Preference");
                     record.save({
                         callback: function(result,operation) {
+                            console.log( "save.callback", result, operation );
                             if ( operation.wasSuccessful() ) {
                                 that.preference = result;
+                                console.log( "Publish to com.rallydev.pxs.hwyw.");
                                 that.publish("com.rallydev.pxs.hwyw.", { text: "save" } );
                             } else {
-                                alert( "Error saving:" + operation.error.errors[0] );
                                 console.log( "error", operation );
+                                alert( "Error saving:" + operation.error.errors[0] );
                             }
                             waiter.hide();
                         }, 

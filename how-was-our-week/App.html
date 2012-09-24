@@ -21,37 +21,44 @@
                     this.wait = new Ext.LoadMask( Ext.getBody(), {msg: "Loading data..." } );
                     this.team = {};
                     this.key_prefix = "com.rallydev.pxs.hwyw.";
-                    this.subscribe( this.key_prefix, function( opt ) { that._getTeamMembers(); } );
+                    this.subscribe( this.key_prefix, function( opt ) { 
+                        console.log( "Responding to published event", opt);
+                        that._getTeamMembers(); 
+                    } );
                     this._getTeamMembers();
                     
                 },
                 _getTeamMembers: function() {
-                    var team = {};
+                    console.log( "_getTeamMembers()" );
+                    var the_team = {};
                     var that = this;
                     
                     Rally.data.ModelFactory.getModel({
                         type: 'Project',
                         success: function(model) {
-                            model.load( this.getContext().getProject().ObjectID, {
-                                fetch: [ 'Name', 'TeamMembers', 'ObjectID', 'DisplayName' ],
-                                callback: function(result,operation) {
-            	                    if ( operation.wasSuccessful() ) {
-                                        Ext.Array.each( result.data.TeamMembers, function( member ) {
-                                            team[ member.ObjectID ] = member.DisplayName;
-                                        });
-                                        that.team = team;
-                                        that._gatherEnergy();
-            	                    } else {
-            	                        alert( "Error saving:" + operation.error.errors[0] );
-            	                        console.log( "error", operation );
+                            if ( that.getContext() && that.getContext().getProject() ) {
+            	                model.load( that.getContext().getProject().ObjectID, {
+            	                    fetch: [ 'Name', 'TeamMembers', 'ObjectID', 'DisplayName' ],
+            	                    callback: function(result,operation) {
+            		                    if ( operation.wasSuccessful() ) {
+            	                            Ext.Array.each( result.data.TeamMembers, function( member ) {
+            	                                the_team[ member.ObjectID ] = member.DisplayName;
+            	                            });
+            	                            that.team = the_team;
+            	                            that._gatherEnergy();
+            		                    } else {
+            		                        alert( "Error saving:" + operation.error.errors[0] );
+            		                        console.log( "error", operation );
+            		                    }
             	                    }
-                                }
-                            });
+            	                });
+                            }
                         },
                         scope: this
                     });
                 },
                 _gatherEnergy: function() {
+                    console.log( "_gatherEnergy()" );
                     this.wait.show();
                     var go_back_to = Rally.util.DateTime.toIsoString( Rally.util.DateTime.add( new Date(), "month", -3 ) ).replace(/T[\W\w]*/,"");
                             
@@ -79,6 +86,7 @@
                     });
                 },
                 _processData: function( data ) {
+                    console.log( "_processData", data );
                     var chart_data = [];
                     var data_hash = {};
                     var that = this;
@@ -133,7 +141,8 @@
                             },
                             series: data,
                             xAxis: { type: 'datetime' },
-                            yAxis: { minRange: 5, min: 1, tickInterval: 1, max: 5 }
+                            yAxis: { minRange: 5, min: 1, tickInterval: 1, max: 5, title: { text: "Energy" }},
+                            exporting: { enableImages: true, enabled: true }
                         }
                     });
                     this.down('#chart_box').add(this.chart);
